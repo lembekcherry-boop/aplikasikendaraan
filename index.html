@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Kendaraan</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --blue: #00a3e0; --magenta: #e6007e; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #eef2f7;
+            color: #1e293b;
+            padding: 15px;
+            min-height: 100vh;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { color: var(--blue); font-size: 26px; font-weight: 700; }
+        .header h1 span { color: var(--magenta); }
+        .container {
+            max-width: 1450px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+        }
+        .sidebar {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            height: fit-content;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border-top: 4px solid var(--blue);
+        }
+        .sidebar h2 { font-size: 14px; margin-bottom: 12px; color: var(--blue); text-transform: uppercase; }
+        .kendaraan-list { max-height: 420px; overflow-y: auto; margin-bottom: 15px; }
+        .kendaraan-item {
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+            text-align: center;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .kendaraan-item:hover { background: #e0f2fe; }
+        .kendaraan-item.active { background: #e0f2fe; border-left-color: var(--blue); color: var(--blue); }
+        .kendaraan-item.peringatan { border-left-color: var(--magenta); }
+        .badge {
+            display: inline-block;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            color: white;
+            margin-top: 5px;
+            margin-right: 4px;
+        }
+        .badge-service { background: var(--magenta); }
+        .badge-pajak { background: #f59e0b; }
+        .form-tambah { border-top: 1px solid #e2e8f0; padding-top: 15px; }
+        .form-tambah input {
+            width: 100%; padding: 10px; margin-bottom: 8px;
+            border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;
+        }
+        .form-tambah button {
+            width: 100%; padding: 11px; background: var(--blue); color: white;
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+        }
+        .main { display: flex; flex-direction: column; gap: 18px; }
+        .card {
+            background: white; border-radius: 14px; padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .card h2 {
+            font-size: 15px; color: var(--blue); margin-bottom: 16px;
+            padding-bottom: 8px; border-bottom: 2px solid #e0f2fe; text-transform: uppercase;
+        }
+        .empty-state {
+            text-align: center; color: #94a3b8; padding: 60px 20px;
+            font-size: 16px; background: white; border-radius: 14px;
+        }
+        label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: #475569; }
+        input, select {
+            width: 100%; padding: 10px; margin-bottom: 12px;
+            border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc;
+        }
+        .btn {
+            padding: 10px 18px; border: none; border-radius: 8px;
+            font-weight: 600; cursor: pointer; font-size: 13px;
+        }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-blue { background: var(--blue); color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .item {
+            background: #f8fafc; padding: 12px 15px; border-radius: 10px;
+            margin-bottom: 10px; border-left: 4px solid var(--blue);
+        }
+        .item.bbm { border-left-color: #0ea5e9; }
+        .item.tol { border-left-color: var(--magenta); }
+        .item-info h4 { font-size: 14px; margin-bottom: 4px; }
+        .item-info p { font-size: 12px; color: #64748b; margin-bottom: 2px; }
+        .alert {
+            padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 13px;
+        }
+        .alert-danger {
+            background: #fce7f3; color: #9d174d; border: 1px solid #f9a8d4;
+        }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .rekap-box {
+            background: #f0f9ff; border: 1px solid #bae6fd;
+            border-radius: 10px; padding: 15px; margin-top: 15px;
+        }
+        .rekap-box h3 { font-size: 14px; color: var(--blue); margin-bottom: 12px; }
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+            .form-row, .form-row-3, .two-col { grid-template-columns: 1fr; }
+        }
+        @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header no-print">
+        <h1>APLIKASI <span>KENDARAAN</span></h1>
+    </div>
+
+    <div class="container no-print">
+        <div class="sidebar">
+            <h2>Nomor Kendaraan</h2>
+            <div class="kendaraan-list" id="daftarKendaraan"></div>
+            <div class="form-tambah">
+                <h2 style="font-size:13px;">+ Tambah Kendaraan</h2>
+                <input type="text" id="nopol" placeholder="Nomor Polisi">
+                <button onclick="tambahKendaraan()">Simpan</button>
+            </div>
+        </div>
+
+        <div class="main" id="mainContent">
+            <div class="empty-state">Pilih kendaraan di sebelah kiri<br>untuk melihat detail</div>
+        </div>
+    </div>
+
+    <div id="printArea" class="print-area" style="display:none;"></div>
+
+    <script>
+        const daftarPIC = ["CHERRY LEMBEK","SETIO PUTRA ANDIKA","DENIH","AKHID NUROJI RAMADHAN","DWI PUTRA HENDRIAYSAH"];
+        let daftarKendaraan = JSON.parse(localStorage.getItem('kendaraan')) || [];
+        let aktifId = null;
+
+        tampilkanSidebar();
+
+        function buatOpsiPIC(selected = '') {
+            let html = `<option value="">-- Pilih PIC --</option>`;
+            daftarPIC.forEach(n => html += `<option value="${n}" ${selected===n?'selected':''}>${n}</option>`);
+            return html;
+        }
+
+        function tambahKendaraan() {
+            const nopol = document.getElementById('nopol').value.trim();
+            if (!nopol) return alert('Nomor Polisi wajib diisi!');
+            const baru = {
+                id: Date.now(), nopol,
+                merek:'', tipe:'', tahun:'', warna:'', nomorMesin:'', nomorRangka:'', bahanBakar:'',
+                pajak1Tahun:'', pajak5Tahun:'', pic:'',
+                services:[], bbm:[], tol:[],
+                serviceBerikutnya:null, kmBerikutnya:null
+            };
+            daftarKendaraan.push(baru);
+            localStorage.setItem('kendaraan', JSON.stringify(daftarKendaraan));
+            document.getElementById('nopol').value = '';
+            tampilkanSidebar();
+            pilihKendaraan(baru.id);
+        }
+
+        function hapusKendaraan(id) {
+            if (!confirm('Yakin hapus kendaraan ini?')) return;
+            daftarKendaraan = daftarKendaraan.filter(k => k.id !== id);
+            localStorage.setItem('kendaraan', JSON.stringify(daftarKendaraan));
+            aktifId = null;
+            tampilkanSidebar();
+            document.getElementById('mainContent').innerHTML = `<div class="empty-state">Pilih kendaraan di sebelah kiri<br>untuk melihat detail</div>`;
+        }
+
+        function isServiceDue(k) {
+            if (!k.serviceBerikutnya) return false;
+            const t = new Date(); t.setHours(0,0,0,0);
+            return new Date(k.serviceBerikutnya) <= t;
+        }
+        function isPajakDue(k) {
+            const t = new Date(); t.setHours(0,0,0,0);
+            if (k.pajak1Tahun && new Date(k.pajak1Tahun) <= t) return true;
+            if (k.pajak5Tahun && new Date(k.pajak5Tahun) <= t) return true;
+            return false;
+        }
+
+        function tampilkanSidebar() {
+            const el = document.getElementById('daftarKendaraan');
+            if (daftarKendaraan.length === 0) {
+                el.innerHTML = `<p style="text-align:center;color:#94a3b8;font-size:13px;padding:20px 0;">Belum ada kendaraan</p>`;
+                return;
+            }
+            let html = '';
+            daftarKendaraan.forEach(k => {
+                const due = isServiceDue(k) || isPajakDue(k);
+                const active = aktifId === k.id ? 'active' : '';
+                let badges = '';
+                if (isServiceDue(k)) badges += `<span class="badge badge-service">Service</span>`;
+                if (isPajakDue(k)) badges += `<span class="badge badge-pajak">Pajak</span>`;
+                html += `<div class="kendaraan-item ${active} ${due?'peringatan':''}" onclick="pilihKendaraan(${k.id})">
+                    ${k.nopol}${badges?`<div>${badges}</div>`:''}
+                </div>`;
+            });
+            el.innerHTML = html;
+        }
+
+        function pilihKendaraan(id) {
+            aktifId = id;
+            tampilkanSidebar();
+            renderDetail();
+        }
+
+        function renderDetail() {
+            const k = daftarKendaraan.find(x => x.id === aktifId);
+            if (!k) return;
+
+            let peringatan = '';
+            if (isServiceDue(k)) peringatan += `<div class="alert alert-danger"><strong>⚠ Service!</strong> Sudah waktunya service</div>`;
+            if (isPajakDue(k)) peringatan += `<div class="alert alert-danger"><strong>⚠ Pajak!</strong> Ada pajak jatuh tempo</div>`;
+
+            const serviceHTML = (k.services||[]).length ? k.services.map(s => `
+                <div class="item"><div class="item-info">
+                    <h4>${s.jenis}</h4>
+                    <p>Bengkel: ${s.namaBengkel||'-'}</p>
+                    <p>Tanggal: ${s.tanggal} | KM: ${s.km}</p>
+                    <p>Biaya: Rp ${Number(s.biaya).toLocaleString('id-ID')}</p>
+                </div></div>`).join('') : `<p style="color:#94a3b8;font-size:13px;">Belum ada data</p>`;
+
+            const bbmHTML = (k.bbm||[]).length ? k.bbm.map(b => `
+                <div class="item bbm"><div class="item-info">
+                    <h4>Rp ${Number(b.jumlah).toLocaleString('id-ID')} (${b.liter} L)</h4>
+                    <p>Harga/Liter: Rp ${Number(b.hargaPerLiter).toLocaleString('id-ID')}</p>
+                    <p>Tanggal: ${b.tanggal}</p>
+                </div></div>`).join('') : `<p style="color:#94a3b8;font-size:13px;">Belum ada data</p>`;
+
+            const tolHTML = (k.tol||[]).length ? k.tol.map(t => `
+                <div class="item tol"><div class="item-info">
+                    <h4>Rp ${Number(t.jumlah).toLocaleString('id-ID')}</h4>
+                    <p>Tanggal: ${t.tanggal}</p>
+                </div></div>`).join('') : `<p style="color:#94a3b8;font-size:13px;">Belum ada data</p>`;
+
+            document.getElementById('mainContent').innerHTML = `
+                ${peringatan}
+
+                <div class="card">
+                    <h2>Data Kendaraan - ${k.nopol}</h2>
+                    <div class="form-row-3">
+                        <div><label>Merek</label><input id="merek" value="${k.merek||''}"></div>
+                        <div><label>Tipe / Model</label><input id="tipe" value="${k.tipe||''}"></div>
+                        <div><label>Tahun</label><input type="number" id="tahun" value="${k.tahun||''}"></div>
+                    </div>
+                    <div class="form-row-3">
+                        <div><label>Warna</label><input id="warna" value="${k.warna||''}"></div>
+                        <div><label>Bahan Bakar</label><input id="bahanBakar" value="${k.bahanBakar||''}"></div>
+                        <div><label>PIC</label><select id="picData">${buatOpsiPIC(k.pic)}</select></div>
+                    </div>
+                    <div class="form-row">
+                        <div><label>Nomor Mesin</label><input id="nomorMesin" value="${k.nomorMesin||''}"></div>
+                        <div><label>Nomor Rangka</label><input id="nomorRangka" value="${k.nomorRangka||''}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div><label>Pajak 1 Tahun</label><input type="date" id="pajak1Tahun" value="${k.pajak1Tahun||''}"></div>
+                        <div><label>Pajak 5 Tahun</label><input type="date" id="pajak5Tahun" value="${k.pajak5Tahun||''}"></div>
+                    </div>
+                    <button class="btn btn-success" onclick="simpanDataKendaraan()">Simpan Data Kendaraan</button>
+                </div>
+
+                <!-- SERVICE -->
+                <div class="card">
+                    <h2>Riwayat Service</h2>
+                    <div style="background:#f8fafc;padding:15px;border-radius:10px;margin-bottom:15px;">
+                        <div class="form-row">
+                            <div><label>Tanggal Service</label><input type="date" id="tanggalService"></div>
+                            <div><label>Nama Bengkel</label><input id="namaBengkel"></div>
+                        </div>
+                        <div class="form-row">
+                            <div><label>Jenis Service</label><input id="jenisService"></div>
+                            <div><label>Kilometer</label><input type="number" id="kmService" value="0"></div>
+                        </div>
+                        <div class="form-row">
+                            <div><label>Biaya (Rp)</label><input type="number" id="biayaService" value="0"></div>
+                            <div><label>Tgl Service Berikutnya</label><input type="date" id="tanggalBerikutnya"></div>
+                        </div>
+                        <div class="form-row">
+                            <div><label>KM Service Berikutnya</label><input type="number" id="kmBerikutnya" value="0"></div>
+                            <div></div>
+                        </div>
+                        <button class="btn btn-success" onclick="tambahService()">Simpan</button>
+                    </div>
+
+                    <div class="rekap-box">
+                        <h3>Rekapitulasi Riwayat Service</h3>
+                        <div class="form-row">
+                            <div>
+                                <label>Filter</label>
+                                <select id="filterService">
+                                    <option value="semua">Semua Data</option>
+                                    <option value="tanggal">Per Tanggal</option>
+                                    <option value="bulan">Per Bulan</option>
+                                    <option value="tahun">Per Tahun</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Pilih</label>
+                                <input type="date" id="nilaiFilterService">
+                            </div>
+                        </div>
+                        <button class="btn btn-blue" onclick="generateRekap('service')">Tampilkan & Cetak Rekapitulasi</button>
+                    </div>
+                    <div style="margin-top:15px;">${serviceHTML}</div>
+                </div>
+
+                <div class="two-col">
+                    <!-- BBM -->
+                    <div class="card">
+                        <h2>BBM</h2>
+                        <div style="background:#f8fafc;padding:15px;border-radius:10px;margin-bottom:15px;">
+                            <div class="form-row">
+                                <div><label>Tanggal</label><input type="date" id="tanggalBbm"></div>
+                                <div><label>Harga per Liter</label><input type="number" id="hargaPerLiter" value="0"></div>
+                            </div>
+                            <div class="form-row">
+                                <div><label>Jumlah (Rp)</label><input type="number" id="jumlahBbm" value="0"></div>
+                                <div><label>Jumlah Liter</label><input type="number" id="jumlahLiter" value="0" step="0.01"></div>
+                            </div>
+                            <button class="btn btn-success" onclick="tambahBbm()">Simpan</button>
+                        </div>
+
+                        <div class="rekap-box">
+                            <h3>Rekapitulasi BBM</h3>
+                            <div class="form-row">
+                                <div>
+                                    <label>Filter</label>
+                                    <select id="filterBbm">
+                                        <option value="semua">Semua Data</option>
+                                        <option value="tanggal">Per Tanggal</option>
+                                        <option value="bulan">Per Bulan</option>
+                                        <option value="tahun">Per Tahun</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Pilih</label>
+                                    <input type="date" id="nilaiFilterBbm">
+                                </div>
+                            </div>
+                            <button class="btn btn-blue" onclick="generateRekap('bbm')">Tampilkan & Cetak Rekapitulasi</button>
+                        </div>
+                        <div style="margin-top:15px;">${bbmHTML}</div>
+                    </div>
+
+                    <!-- TOL -->
+                    <div class="card">
+                        <h2>Tol</h2>
+                        <div style="background:#f8fafc;padding:15px;border-radius:10px;margin-bottom:15px;">
+                            <div class="form-row">
+                                <div><label>Tanggal</label><input type="date" id="tanggalTol"></div>
+                                <div><label>Harga / Nominal</label><input type="number" id="jumlahTol" value="0"></div>
+                            </div>
+                            <button class="btn btn-success" onclick="tambahTol()">Simpan</button>
+                        </div>
+
+                        <div class="rekap-box">
+                            <h3>Rekapitulasi Tol</h3>
+                            <div class="form-row">
+                                <div>
+                                    <label>Filter</label>
+                                    <select id="filterTol">
+                                        <option value="semua">Semua Data</option>
+                                        <option value="tanggal">Per Tanggal</option>
+                                        <option value="bulan">Per Bulan</option>
+                                        <option value="tahun">Per Tahun</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Pilih</label>
+                                    <input type="date" id="nilaiFilterTol">
+                                </div>
+                            </div>
+                            <button class="btn btn-blue" onclick="generateRekap('tol')">Tampilkan & Cetak Rekapitulasi</button>
+                        </div>
+                        <div style="margin-top:15px;">${tolHTML}</div>
+                    </div>
+                </div>
+
+                <div style="text-align:right;">
+                    <button class="btn btn-danger" onclick="hapusKendaraan(${k.id})">Hapus Kendaraan Ini</button>
+                </div>
+            `;
+        }
+
+        // ==================== REKAPITULASI ====================
+        function generateRekap(jenis) {
+    const k = daftarKendaraan.find(x => x.id === aktifId);
+    if (!k) return;
+
+    let data = [];
+    let judul = '';
+    let filter = '';
+    let nilai = '';
+
+    if (jenis === 'service') {
+        data = [...(k.services || [])];
+        judul = 'REKAPITULASI RIWAYAT SERVICE';
+        filter = document.getElementById('filterService').value;
+        nilai = document.getElementById('nilaiFilterService').value;
+    } else if (jenis === 'bbm') {
+        data = [...(k.bbm || [])];
+        judul = 'REKAPITULASI BBM';
+        filter = document.getElementById('filterBbm').value;
+        nilai = document.getElementById('nilaiFilterBbm').value;
+    } else {
+        data = [...(k.tol || [])];
+        judul = 'REKAPITULASI TOL';
+        filter = document.getElementById('filterTol').value;
+        nilai = document.getElementById('nilaiFilterTol').value;
+    }
+
+    // Filter data
+    if (filter === 'tanggal' && nilai) {
+        data = data.filter(d => d.tanggal === nilai);
+    } else if (filter === 'bulan' && nilai) {
+        const [y, m] = nilai.split('-');
+        data = data.filter(d => d.tanggal && d.tanggal.startsWith(`${y}-${m}`));
+    } else if (filter === 'tahun' && nilai) {
+        const y = nilai.split('-')[0];
+        data = data.filter(d => d.tanggal && d.tanggal.startsWith(y));
+    }
+
+    let rows = '';
+    let totalAll = 0;
+    let headerTable = '';
+    const picName = k.pic || '________________';
+
+    // ==================== TOL (mirip gambar) ====================
+    if (jenis === 'tol') {
+        headerTable = `
+            <tr style="background:#f1f5f9;font-weight:bold;">
+                <th style="border:1px solid #333;padding:8px;text-align:center;width:50px;">NO</th>
+                <th style="border:1px solid #333;padding:8px;text-align:center;">TANGGAL</th>
+                <th style="border:1px solid #333;padding:8px;text-align:center;">HARGA SATUAN</th>
+                <th style="border:1px solid #333;padding:8px;text-align:center;">JUMLAH VOLUME</th>
+                <th style="border:1px solid #333;padding:8px;text-align:center;">JUMLAH</th>
+            </tr>`;
+
+        // Group by tanggal + harga
+        const groupMap = {};
+        data.forEach(t => {
+            const key = `${t.tanggal}_${t.jumlah}`;
+            if (!groupMap[key]) {
+                groupMap[key] = {
+                    tanggal: t.tanggal,
+                    harga: Number(t.jumlah) || 0,
+                    volume: 0
+                };
+            }
+            groupMap[key].volume += 1;
+        });
+
+        // Urutkan berdasarkan tanggal
+        const grouped = Object.values(groupMap).sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+
+        // Kelompokkan lagi per tanggal untuk NO
+        const byDate = {};
+        grouped.forEach(g => {
+            if (!byDate[g.tanggal]) byDate[g.tanggal] = [];
+            byDate[g.tanggal].push(g);
+        });
+
+        let no = 1;
+        Object.keys(byDate).sort().forEach(tgl => {
+            const items = byDate[tgl];
+            items.forEach((item, idx) => {
+                const subtotal = item.harga * item.volume;
+                totalAll += subtotal;
+
+                const tglText = idx === 0 ? formatTanggalIndo(item.tanggal) : '';
+                const noText = idx === 0 ? no : '';
+
+                rows += `
+                    <tr>
+                        <td style="border:1px solid #333;padding:7px;text-align:center;">${noText}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:center;">${tglText}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:right;">Rp ${item.harga.toLocaleString('id-ID')}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:center;">${item.volume}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:right;">Rp ${subtotal.toLocaleString('id-ID')}</td>
+                    </tr>`;
+            });
+            no++;
+        });
+    }
+    // ==================== BBM ====================
+    else if (jenis === 'bbm') {
+        headerTable = `
+            <tr style="background:#f1f5f9;font-weight:bold;">
+                <th style="border:1px solid #333;padding:8px;text-align:center;width:50px;">NO</th>
+                <th style="border:1px solid #333;padding:8px;text-align:center;">TANGGAL</th>
+                <th style="border:1px solid #333;padding:8px;text-align:center;">LITER</th>
+                <th style="border:1px solid #333;padding:8px;text-align:center;">HARGA/LITER</th>
+                <th style="border:1px solid #333;padding:8px;text-align:center;">JUMLAH</th>
+            </tr>`;
+        data.forEach((b, i) => {
+            totalAll += Number(b.jumlah) || 0;
+            rows += `<tr>
+                <td style="border:1px solid #333;padding:7px;text-align:center;">${i+1}</td>
+                <td style="border:1px solid #333;padding:7px;text-align:center;">${formatTanggalIndo(b.tanggal)}</td>
+                <td style="border:1px solid #333;padding:7px;text-align:center;">${b.liter}</td>
+                <td style="border:1px solid #333;padding:7px;text-align:right;">Rp ${Number(b.hargaPerLiter).toLocaleString('id-ID')}</td>
+                <td style="border:1px solid #333;padding:7px;text-align:right;">Rp ${Number(b.jumlah).toLocaleString('id-ID')}</td>
+            </tr>`;
+        });
+    }
+    // ==================== SERVICE ====================
+    else {
+        headerTable = `
+            <tr style="background:#f1f5f9;font-weight:bold;">
+                <th style="border:1px solid #333;padding:8px;text-align:center;width:50px;">NO</th>
+                <th style="border:1px solid #333;padding:8px;text-align:center;">TANGGAL</th>
+                <th style="border:1px solid #333;padding:8px;">JENIS SERVICE</th>
+                <th style="border:1px solid #333;padding:8px;">BENGKEL</th>
+                <th style="border:1px solid #333;padding:8px;text-align:center;">KM</th>
+                <th style="border:1px solid #333;padding:8px;text-align:right;">BIAYA</th>
+            </tr>`;
+        data.forEach((s, i) => {
+            totalAll += Number(s.biaya) || 0;
+            rows += `<tr>
+                <td style="border:1px solid #333;padding:7px;text-align:center;">${i+1}</td>
+                <td style="border:1px solid #333;padding:7px;text-align:center;">${formatTanggalIndo(s.tanggal)}</td>
+                <td style="border:1px solid #333;padding:7px;">${s.jenis}</td>
+                <td style="border:1px solid #333;padding:7px;">${s.namaBengkel||'-'}</td>
+                <td style="border:1px solid #333;padding:7px;text-align:center;">${s.km}</td>
+                <td style="border:1px solid #333;padding:7px;text-align:right;">Rp ${Number(s.biaya).toLocaleString('id-ID')}</td>
+            </tr>`;
+        });
+    }
+
+    const periodeText = filter === 'semua' ? 'Semua Data' : 
+                        filter === 'tanggal' ? `Tanggal: ${formatTanggalIndo(nilai)}` :
+                        filter === 'bulan' ? `Bulan: ${nilai}` : `Tahun: ${nilai ? nilai.split('-')[0] : ''}`;
+
+    const today = new Date();
+    const tglCetak = `${today.getDate()} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][today.getMonth()]} ${today.getFullYear()}`;
+
+    const html = `
+        <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 900px; margin: 0 auto; color: #000;">
+            <h2 style="text-align:center; margin-bottom: 4px; font-size: 18px;">${judul}</h2>
+            <h3 style="text-align:center; margin-bottom: 4px; font-size: 16px;">Nomor Kendaraan: ${k.nopol}</h3>
+            <p style="text-align:center; margin-bottom: 20px; color: #444; font-size: 13px;">${periodeText}</p>
+
+            <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+                <thead>${headerTable}</thead>
+                <tbody>
+                    ${rows || `<tr><td colspan="6" style="border:1px solid #333;padding:15px;text-align:center;">Tidak ada data</td></tr>`}
+                </tbody>
+                <tfoot>
+                    <tr style="font-weight:bold; background:#f8fafc;">
+                        <td colspan="${jenis === 'service' ? 5 : 4}" style="border:1px solid #333; padding:8px; text-align:right;">TOTAL</td>
+                        <td style="border:1px solid #333; padding:8px; text-align:right;">Rp ${totalAll.toLocaleString('id-ID')}</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div style="margin-top: 50px; text-align: right; font-size: 13px;">
+                <p>Bogor, ${tglCetak}</p>
+                <p style="margin-top: 4px;">Mengetahui,</p>
+                <br><br><br><br>
+                <p style="margin-top: 10px;"><strong>${picName}</strong></p>
+            </div>
+        </div>
+    `;
+
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = html;
+    printArea.style.display = 'block';
+
+    setTimeout(() => {
+        window.print();
+        printArea.style.display = 'none';
+    }, 400);
+}
+
+// Helper format tanggal Indonesia
+function formatTanggalIndo(tgl) {
+    if (!tgl) return '-';
+    const [y, m, d] = tgl.split('-');
+    const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    return `${parseInt(d)} ${bulan[parseInt(m)-1]} ${y}`;
+}
+
+        // ==================== SIMPAN ====================
+        function simpanDataKendaraan() {
+            const i = daftarKendaraan.findIndex(k => k.id === aktifId);
+            daftarKendaraan[i].merek = document.getElementById('merek').value.trim();
+            daftarKendaraan[i].tipe = document.getElementById('tipe').value.trim();
+            daftarKendaraan[i].tahun = document.getElementById('tahun').value;
+            daftarKendaraan[i].warna = document.getElementById('warna').value.trim();
+            daftarKendaraan[i].bahanBakar = document.getElementById('bahanBakar').value.trim();
+            daftarKendaraan[i].nomorMesin = document.getElementById('nomorMesin').value.trim();
+            daftarKendaraan[i].nomorRangka = document.getElementById('nomorRangka').value.trim();
+            daftarKendaraan[i].pajak1Tahun = document.getElementById('pajak1Tahun').value;
+            daftarKendaraan[i].pajak5Tahun = document.getElementById('pajak5Tahun').value;
+            daftarKendaraan[i].pic = document.getElementById('picData').value;
+            localStorage.setItem('kendaraan', JSON.stringify(daftarKendaraan));
+            renderDetail();
+            tampilkanSidebar();
+            alert('Data berhasil disimpan');
+        }
+
+        function tambahService() {
+            const tanggal = document.getElementById('tanggalService').value;
+            const jenis = document.getElementById('jenisService').value.trim();
+            if (!tanggal || !jenis) return alert('Tanggal dan Jenis wajib diisi');
+            const i = daftarKendaraan.findIndex(k => k.id === aktifId);
+            if (!daftarKendaraan[i].services) daftarKendaraan[i].services = [];
+            daftarKendaraan[i].services.unshift({
+                id: Date.now(),
+                tanggal,
+                namaBengkel: document.getElementById('namaBengkel').value.trim() || '-',
+                jenis,
+                km: document.getElementById('kmService').value || '0',
+                biaya: document.getElementById('biayaService').value || '0',
+                tanggalBerikutnya: document.getElementById('tanggalBerikutnya').value || null,
+                kmBerikutnya: document.getElementById('kmBerikutnya').value || null
+            });
+            if (document.getElementById('tanggalBerikutnya').value) {
+                daftarKendaraan[i].serviceBerikutnya = document.getElementById('tanggalBerikutnya').value;
+            }
+            localStorage.setItem('kendaraan', JSON.stringify(daftarKendaraan));
+            renderDetail();
+            tampilkanSidebar();
+        }
+
+        function tambahBbm() {
+            const tanggal = document.getElementById('tanggalBbm').value;
+            if (!tanggal) return alert('Tanggal wajib diisi');
+            const i = daftarKendaraan.findIndex(k => k.id === aktifId);
+            if (!daftarKendaraan[i].bbm) daftarKendaraan[i].bbm = [];
+            daftarKendaraan[i].bbm.unshift({
+                id: Date.now(),
+                tanggal,
+                hargaPerLiter: document.getElementById('hargaPerLiter').value || 0,
+                jumlah: document.getElementById('jumlahBbm').value || 0,
+                liter: document.getElementById('jumlahLiter').value || 0
+            });
+            localStorage.setItem('kendaraan', JSON.stringify(daftarKendaraan));
+            renderDetail();
+        }
+
+        function tambahTol() {
+            const tanggal = document.getElementById('tanggalTol').value;
+            if (!tanggal) return alert('Tanggal wajib diisi');
+            const i = daftarKendaraan.findIndex(k => k.id === aktifId);
+            if (!daftarKendaraan[i].tol) daftarKendaraan[i].tol = [];
+            daftarKendaraan[i].tol.unshift({
+                id: Date.now(),
+                tanggal,
+                jumlah: document.getElementById('jumlahTol').value || 0
+            });
+            localStorage.setItem('kendaraan', JSON.stringify(daftarKendaraan));
+            renderDetail();
+        }
+    </script>
+</body>
+</html>
